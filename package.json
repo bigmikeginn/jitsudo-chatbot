@@ -1,0 +1,13 @@
+{
+  "name": "jitsudo-chatbot",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.0"
+  },
+  "devDependencies": {
+    "vercel": "^39.0.0"
+  }
+}
