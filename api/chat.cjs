@@ -106,7 +106,6 @@ module.exports = async function handler(req, res) {
   if (messages.length > 20) messages = messages.slice(-20);
 
   try {
-    const { faq, webContent } = await buildContext();
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
@@ -124,12 +123,6 @@ Your role:
 Tone: Genuine, enthusiastic, and encouraging — like a passionate coach who really wants to help people find their path in martial arts. Warm and personable, never salesy. Nudge toward action when it feels natural.
 
 When relevant, invite them to try a free trial class at: https://www.jitsudo.ca/join-now-for-martial-arts-classes
-
-=== FAQ Knowledge Base ===
-${faq || 'No FAQ data available.'}
-
-=== Website Content ===
-${webContent || 'No website data available.'}
 
 Guidelines:
 - Keep responses concise and conversational (2–3 short paragraphs max)
