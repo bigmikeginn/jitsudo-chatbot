@@ -1,6 +1,5 @@
-const Anthropic = require('@anthropic-ai/sdk').default;
-
 const SHEET_ID = '1Zks3ZD8-ootOG1qoxB-ZA9iUy0uzKadulASwOrxbZZ4';
+const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
 const PAGES_TO_SCRAPE = [
   'https://www.jitsudo.ca',
@@ -16,10 +15,10 @@ const PAGES_TO_SCRAPE = [
   'https://www.jitsudo.ca/bjj',
 ];
 
-// Module-level cache — persists across warm Vercel invocations
+// Module-level cache
 let cachedContext = null;
 let cacheExpiry = 0;
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL = 60 * 60 * 1000;
 
 function stripHtml(html) {
   return html
@@ -87,9 +86,7 @@ async function buildContext() {
   return cachedContext;
 }
 
-const client = new Anthropic();
-
-async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -110,6 +107,12 @@ async function handler(req, res) {
 
   try {
     const { faq, webContent } = await buildContext();
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+
+    if (!apiKey) {
+      console.error('ANTHROPIC_API_KEY not set');
+      return res.status(500).json({ error: 'API key not configured' });
+    }
 
     const system = `You are a warm, knowledgeable assistant for Jitsudo — a martial arts school that builds confident, capable people through BJJ, kickboxing, and other disciplines.
 
@@ -135,14 +138,31 @@ Guidelines:
 - If unsure about something specific (e.g. exact schedule, pricing), be honest and suggest they contact the school or check the website
 - Always end on an encouraging, welcoming note`;
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 500,
-      system,
-      messages,
+    const response = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 500,
+        system,
+        messages,
+      }),
     });
 
-    return res.status(200).json({ reply: response.content[0].text });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API error:', response.status, errorText);
+      return res.status(500).json({ error: 'Claude API error' });
+    }
+
+    const data = await response.json();
+    const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response — please try again!";
+
+    return res.status(200).json({ reply });
   } catch (err) {
     console.error('Chat error:', err);
     return res.status(500).json({ error: 'Something went wrong. Please try again!' });
