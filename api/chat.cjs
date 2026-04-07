@@ -156,7 +156,11 @@ Guidelines:
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API error:', response.status, errorText);
-      return res.status(500).json({ error: 'Claude API error' });
+      return res.status(500).json({
+        error: 'Claude API error',
+        status: response.status,
+        details: errorText.substring(0, 200)
+      });
     }
 
     const data = await response.json();
@@ -165,8 +169,9 @@ Guidelines:
     return res.status(200).json({ reply });
   } catch (err) {
     console.error('Chat error:', err);
-    return res.status(500).json({ error: 'Something went wrong. Please try again!' });
+    return res.status(500).json({
+      error: 'Something went wrong. Please try again!',
+      details: err.message || err.toString()
+    });
   }
 }
-
-module.exports = handler;

@@ -219,15 +219,19 @@
         body: JSON.stringify({ messages: history }),
       });
       hideTyping();
-      if (!res.ok) throw new Error('API error');
       var data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'API error: ' + data.details || 'Unknown error');
+      }
       var reply = data.reply || "Sorry, I couldn't get a response — please try again!";
       addBot(reply);
       history.push({ role: 'assistant', content: reply });
       if (history.length > 20) history = history.slice(-20);
     } catch (e) {
       hideTyping();
-      addBot("Oops — something went wrong on my end! Feel free to try again, or visit us at jitsudo.ca 🥋");
+      var errMsg = "Oops — something went wrong on my end! Feel free to try again, or visit us at jitsudo.ca 🥋";
+      if (e.message) errMsg += " (" + e.message + ")";
+      addBot(errMsg);
     }
 
     loading = false;
