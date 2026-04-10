@@ -1,6 +1,37 @@
 const SHEET_ID = '1Zks3ZD8-ootOG1qoxB-ZA9iUy0uzKadulASwOrxbZZ4';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
+// ── Rate limiting ──────────────────────────────────────────
+const RATE_LIMIT_MAX    = 20;               // max messages per window
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000;  // 1 hour in ms
+const rateLimitMap = new Map();
+
+function getIp(req) {
+  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+    || req.socket?.remoteAddress
+    || 'unknown';
+}
+
+function isRateLimited(ip) {
+  const now = Date.now();
+
+  // Prevent memory bloat — purge expired entries when map gets large
+  if (rateLimitMap.size > 500) {
+    for (const [key, val] of rateLimitMap) {
+      if (now > val.resetTime) rateLimitMap.delete(key);
+    }
+  }
+
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return true;
+  entry.count++;
+  return false;
+}
+
 const PAGES_TO_SCRAPE = [
   'https://www.jitsudo.ca',
   'https://www.jitsudo.ca/join-now-for-martial-arts-classes',
@@ -89,10 +120,23 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  // Rate limiting
+  const ip = getIp(req);
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ error: 'Too many messages. Please wait a while before trying again.' });
+  }
+
+  // Validate request body
   let messages;
   try {
     messages = req.body?.messages;
     if (!Array.isArray(messages) || messages.length === 0) throw new Error();
+
+    // Validate each message has role + string content under 1000 chars
+    for (const m of messages) {
+      if (!m.role || typeof m.content !== 'string') throw new Error();
+      if (m.content.length > 1000) return res.status(400).json({ error: 'Message too long.' });
+    }
   } catch {
     return res.status(400).json({ error: 'Invalid request body' });
   }
@@ -182,12 +226,8 @@ Only offer this when it feels natural, not on every message.`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API error:', response.status, errorText);
-      return res.status(500).json({
-        error: 'Claude API error',
-        status: response.status,
-        details: errorText.substring(0, 200)
-      });
+      console.error('Claude API error:', response.status, errorText);
+      return res.status(500).json({ error: 'Something went wrong. Please try again.' });
     }
 
     const data = await response.json();
@@ -196,9 +236,6 @@ Only offer this when it feels natural, not on every message.`;
     return res.status(200).json({ reply });
   } catch (err) {
     console.error('Chat error:', err);
-    return res.status(500).json({
-      error: 'Something went wrong. Please try again!',
-      details: err.message || err.toString()
-    });
+    return res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 }

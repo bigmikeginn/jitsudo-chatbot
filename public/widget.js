@@ -250,6 +250,10 @@
       });
       hideTyping();
       var data = await res.json();
+      if (res.status === 429) {
+        addBot("You've sent a lot of messages! Please wait an hour before trying again, or reach us directly at (905) 235-9119 🥋");
+        loading = false; goBtn.disabled = false; return;
+      }
       if (!res.ok) {
         throw new Error(data.error || 'Unknown error');
       }
