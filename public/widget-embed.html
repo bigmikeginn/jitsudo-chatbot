@@ -204,7 +204,7 @@
     d.className = 'jm jbot';
     d.innerHTML = '<div class="jm-av">🥋</div><div class="jm-b">' + fmt(text) + '</div>';
     msgs.appendChild(d);
-    scroll();
+    msgs.scrollTop = d.offsetTop - msgs.offsetTop;
   }
 
   function addUser(text) {
