@@ -4,14 +4,9 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const PAGES_TO_SCRAPE = [
   'https://www.jitsudo.ca',
   'https://www.jitsudo.ca/join-now-for-martial-arts-classes',
-  'https://www.jitsudo.ca/classes',
-  'https://www.jitsudo.ca/programs',
-  'https://www.jitsudo.ca/schedule',
+  'https://www.jitsudo.ca/martial-arts-schedule-pricing-newmarket',
   'https://www.jitsudo.ca/about',
-  'https://www.jitsudo.ca/pricing',
   'https://www.jitsudo.ca/contact',
-  'https://www.jitsudo.ca/kids-classes',
-  'https://www.jitsudo.ca/adult-classes',
   'https://www.jitsudo.ca/bjj',
 ];
 
@@ -172,7 +167,7 @@ ${webContent || 'No website data available.'}
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
         system,
         messages,

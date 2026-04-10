@@ -110,6 +110,13 @@
     '#jchat-foot{text-align:center!important;padding:6px!important;font-size:11px!important;',
     'color:#ccc!important;background:#fff!important;flex-shrink:0!important;}',
 
+    '#jqr{display:flex!important;flex-wrap:wrap!important;gap:6px!important;padding:4px 4px 8px 4px!important;}',
+    '.jqr-btn{background:#fff!important;border:1.5px solid #e53935!important;color:#b71c1c!important;',
+    'border-radius:16px!important;padding:6px 12px!important;font-size:12.5px!important;',
+    'cursor:pointer!important;transition:background .15s,color .15s!important;',
+    'font-family:inherit!important;line-height:1.4!important;white-space:nowrap!important;}',
+    '.jqr-btn:hover{background:#b71c1c!important;color:#fff!important;}',
+
     '@media(max-width:480px){',
     '#jchat-window{right:0!important;bottom:0!important;width:100%!important;',
     'height:92vh!important;border-radius:18px 18px 0 0!important;}',
@@ -138,6 +145,34 @@
       '</div>' +
       '<div id="jchat-foot">Powered by Jitsudo AI</div>' +
     '</div>';
+
+  /* ── Quick replies ──────────────────────────────────────── */
+  var QUICK_REPLIES = [
+    { label: '🥋 Classes offered',    text: 'What classes do you offer?' },
+    { label: '💰 Pricing',            text: 'How much does membership cost?' },
+    { label: '📅 Schedule',           text: 'What is the class schedule?' },
+    { label: '👧 Kids programs',      text: 'Tell me about your kids programs' },
+    { label: '🎁 Free trial',         text: 'How do I book a free trial?' },
+  ];
+
+  function addQuickReplies() {
+    var d = document.createElement('div');
+    d.id = 'jqr';
+    QUICK_REPLIES.forEach(function(qr) {
+      var b = document.createElement('button');
+      b.className = 'jqr-btn';
+      b.textContent = qr.label;
+      b.addEventListener('click', function() {
+        var el = document.getElementById('jqr');
+        if (el) el.remove();
+        inp.value = qr.text;
+        send();
+      });
+      d.appendChild(b);
+    });
+    msgs.appendChild(d);
+    scroll();
+  }
 
   /* ── State & refs ───────────────────────────────────────── */
   var open = false, loading = false, history = [];
@@ -196,7 +231,7 @@
     open = !open;
     win.classList.toggle('jopen', open);
     btn.textContent = open ? '✕' : '🥋';
-    if (open && msgs.childElementCount === 0) addBot(WELCOME);
+    if (open && msgs.childElementCount === 0) { addBot(WELCOME); addQuickReplies(); }
     if (open) setTimeout(function(){ inp.focus(); }, 280);
   }
 
@@ -208,6 +243,8 @@
     loading = true;
     goBtn.disabled = true;
 
+    var qr = document.getElementById('jqr');
+    if (qr) qr.remove();
     addUser(text);
     history.push({ role: 'user', content: text });
     showTyping();
