@@ -1,0 +1,308 @@
+(function () {
+  'use strict';
+
+  function init() {
+    // Inject root directly into body so position:fixed works inside any page builder
+    var root = document.createElement('div');
+    root.id = 'jitsudo-chat-root';
+    document.body.appendChild(root);
+
+  var API_URL = 'https://jitsudo-chatbot.vercel.app/api/chat';
+  var WELCOME = "Hey there! 👋 I'm the Jitsudo assistant. Whether you're curious about our classes, looking for the right fit, or just wondering what martial arts could do for you — I'm here to help! What's on your mind?";
+
+  /* ── Styles ─────────────────────────────────────────────── */
+  var css = [
+    // Root wrapper — pointer-events on so clicks reach the button
+    '#jitsudo-chat-root{pointer-events:none!important;}',
+    '#jchat-btn,#jchat-window{pointer-events:all!important;}',
+    // Button — all positioning !important to override any page builder interference
+    '#jchat-btn{position:fixed!important;bottom:24px!important;right:24px!important;',
+    'width:62px!important;height:62px!important;border-radius:50%!important;',
+    'background:linear-gradient(135deg,#b71c1c,#e53935)!important;color:#fff!important;',
+    'border:none!important;cursor:pointer!important;',
+    'box-shadow:0 4px 22px rgba(183,28,28,.55)!important;font-size:26px!important;',
+    'z-index:2147483647!important;transition:transform .2s,box-shadow .2s;',
+    'display:flex!important;align-items:center!important;justify-content:center!important;',
+    'padding:0!important;margin:0!important;line-height:1!important;}',
+    '#jchat-btn:hover{transform:scale(1.09)!important;box-shadow:0 6px 28px rgba(183,28,28,.65)!important;}',
+
+    // Chat window — capped to viewport height so it never spills above the screen
+    '#jchat-window{position:fixed!important;bottom:90px!important;right:24px!important;',
+    'width:360px!important;height:min(540px,calc(100vh - 110px))!important;',
+    'background:#fff!important;border-radius:18px!important;',
+    'box-shadow:0 12px 48px rgba(0,0,0,.18)!important;',
+    'display:flex!important;flex-direction:column!important;',
+    'z-index:2147483646!important;overflow:hidden!important;',
+    'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important;',
+    'opacity:0;transform:translateY(14px) scale(.97);transition:opacity .25s,transform .25s;',
+    'pointer-events:none!important;margin:0!important;padding:0!important;}',
+    '#jchat-window.jopen{opacity:1!important;transform:translateY(0) scale(1)!important;',
+    'pointer-events:all!important;}',
+
+    '#jchat-header{background:linear-gradient(135deg,#1a1a2e,#2d2d44)!important;color:#fff!important;',
+    'padding:14px 16px!important;display:flex!important;align-items:center!important;',
+    'gap:11px!important;flex-shrink:0!important;}',
+    '#jchat-avatar{width:40px!important;height:40px!important;border-radius:50%!important;',
+    'background:linear-gradient(135deg,#b71c1c,#e53935)!important;',
+    'display:flex!important;align-items:center!important;justify-content:center!important;',
+    'font-size:20px!important;flex-shrink:0!important;}',
+    '#jchat-header-info h3{margin:0!important;font-size:15px!important;font-weight:600!important;color:#fff!important;}',
+    '#jchat-header-info p{margin:3px 0 0!important;font-size:12px!important;opacity:.72;color:#fff!important;}',
+    '#jchat-x{margin-left:auto!important;background:none!important;border:none!important;',
+    'color:#fff!important;cursor:pointer!important;font-size:20px!important;',
+    'opacity:.65;transition:opacity .15s;padding:4px!important;line-height:1!important;}',
+    '#jchat-x:hover{opacity:1!important;}',
+
+    '#jchat-msgs{flex:1!important;overflow-y:auto!important;padding:14px 12px!important;',
+    'display:flex!important;flex-direction:column!important;gap:10px!important;',
+    'background:#f7f7f9!important;min-height:0!important;}',
+    '#jchat-msgs::-webkit-scrollbar{width:4px!important;}',
+    '#jchat-msgs::-webkit-scrollbar-thumb{background:#ddd!important;border-radius:2px!important;}',
+
+    '.jm{display:flex!important;gap:8px!important;max-width:87%!important;}',
+    '.jm.jbot{align-self:flex-start!important;}',
+    '.jm.juser{align-self:flex-end!important;flex-direction:row-reverse!important;}',
+    '.jm-av{width:28px!important;height:28px!important;border-radius:50%!important;',
+    'background:linear-gradient(135deg,#b71c1c,#e53935)!important;',
+    'display:flex!important;align-items:center!important;justify-content:center!important;',
+    'font-size:13px!important;flex-shrink:0!important;align-self:flex-end!important;}',
+    '.jm-b{padding:9px 13px!important;border-radius:16px!important;',
+    'font-size:14px!important;line-height:1.55!important;color:#222!important;',
+    'max-width:100%!important;word-break:break-word!important;}',
+    '.jm.jbot .jm-b{background:#fff!important;border-radius:16px 16px 16px 4px!important;',
+    'box-shadow:0 1px 5px rgba(0,0,0,.09)!important;}',
+    '.jm.juser .jm-b{background:linear-gradient(135deg,#b71c1c,#e53935)!important;',
+    'color:#fff!important;border-radius:16px 16px 4px 16px!important;}',
+    '.jm-b a{color:#b71c1c!important;text-decoration:underline!important;}',
+    '.jm.juser .jm-b a{color:#fff!important;}',
+
+    '.jtyp{display:flex!important;gap:4px!important;padding:10px 13px!important;',
+    'background:#fff!important;border-radius:16px 16px 16px 4px!important;',
+    'box-shadow:0 1px 5px rgba(0,0,0,.09)!important;align-self:flex-start!important;}',
+    '.jtyp span{width:7px!important;height:7px!important;background:#b71c1c!important;',
+    'border-radius:50%!important;animation:jb 1.2s infinite!important;opacity:.55!important;}',
+    '.jtyp span:nth-child(2){animation-delay:.2s!important;}',
+    '.jtyp span:nth-child(3){animation-delay:.4s!important;}',
+    '@keyframes jb{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}',
+
+    '#jchat-input-row{padding:11px 12px!important;display:flex!important;gap:8px!important;',
+    'background:#fff!important;border-top:1px solid #ececec!important;flex-shrink:0!important;}',
+    '#jchat-in{flex:1!important;border:1.5px solid #e0e0e0!important;border-radius:24px!important;',
+    'padding:9px 14px!important;font-size:14px!important;outline:none!important;',
+    'transition:border-color .2s;font-family:inherit!important;resize:none!important;',
+    'box-sizing:border-box!important;}',
+    '#jchat-in:focus{border-color:#b71c1c!important;}',
+    '#jchat-go{width:38px!important;height:38px!important;border-radius:50%!important;',
+    'flex-shrink:0!important;background:linear-gradient(135deg,#b71c1c,#e53935)!important;',
+    'color:#fff!important;border:none!important;cursor:pointer!important;',
+    'display:flex!important;align-items:center!important;justify-content:center!important;',
+    'transition:transform .15s,opacity .15s;}',
+    '#jchat-go:hover{transform:scale(1.09)!important;}',
+    '#jchat-go:disabled{opacity:.4!important;cursor:default!important;transform:none!important;}',
+    '#jchat-foot{text-align:center!important;padding:6px!important;font-size:11px!important;',
+    'color:#ccc!important;background:#fff!important;flex-shrink:0!important;}',
+
+    '#jqr{display:flex!important;flex-wrap:wrap!important;gap:6px!important;padding:4px 4px 8px 4px!important;}',
+    '.jqr-btn{background:#fff!important;border:1.5px solid #e53935!important;color:#b71c1c!important;',
+    'border-radius:16px!important;padding:6px 12px!important;font-size:12.5px!important;',
+    'cursor:pointer!important;transition:background .15s,color .15s!important;',
+    'font-family:inherit!important;line-height:1.4!important;white-space:nowrap!important;}',
+    '.jqr-btn:hover{background:#b71c1c!important;color:#fff!important;}',
+
+    '@media(max-width:480px){',
+    '#jchat-window{right:0!important;bottom:0!important;width:100%!important;',
+    'height:92vh!important;border-radius:18px 18px 0 0!important;}',
+    '#jchat-btn{bottom:16px!important;right:16px!important;}}'
+  ].join('');
+
+  var sEl = document.createElement('style');
+  sEl.textContent = css;
+  document.head.appendChild(sEl);
+
+  /* ── DOM ────────────────────────────────────────────────── */
+  root.innerHTML =
+    '<button id="jchat-btn" aria-label="Chat with Jitsudo">🥋</button>' +
+    '<div id="jchat-window" role="dialog" aria-label="Jitsudo Chat Assistant">' +
+      '<div id="jchat-header">' +
+        '<div id="jchat-avatar">🥋</div>' +
+        '<div id="jchat-header-info"><h3>Jitsudo Assistant</h3><p>Ask me anything about our classes!</p></div>' +
+        '<button id="jchat-x" aria-label="Close">✕</button>' +
+      '</div>' +
+      '<div id="jchat-msgs"></div>' +
+      '<div id="jchat-input-row">' +
+        '<input id="jchat-in" type="text" placeholder="Ask about classes, schedule, pricing…" maxlength="500" />' +
+        '<button id="jchat-go" aria-label="Send">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div id="jchat-foot">Powered by Jitsudo AI</div>' +
+    '</div>';
+
+  /* ── Quick replies ──────────────────────────────────────── */
+  var QUICK_REPLIES = [
+    { label: '🥋 Classes offered',    text: 'What classes do you offer?' },
+    { label: '💰 Pricing',            text: 'How much does membership cost?' },
+    { label: '📅 Schedule',           text: 'What is the class schedule?' },
+    { label: '👧 Kids programs',      text: 'Tell me about your kids programs' },
+    { label: '🎁 Free trial',         text: 'How do I book a free trial?' },
+  ];
+
+  function addQuickReplies() {
+    var d = document.createElement('div');
+    d.id = 'jqr';
+    QUICK_REPLIES.forEach(function(qr) {
+      var b = document.createElement('button');
+      b.className = 'jqr-btn';
+      b.textContent = qr.label;
+      b.addEventListener('click', function() {
+        var el = document.getElementById('jqr');
+        if (el) el.remove();
+        inp.value = qr.text;
+        send();
+      });
+      d.appendChild(b);
+    });
+    msgs.appendChild(d);
+    scroll();
+  }
+
+  /* ── State & refs ───────────────────────────────────────── */
+  var open = false, loading = false, history = [];
+  var btn    = document.getElementById('jchat-btn');
+  var win    = document.getElementById('jchat-window');
+  var xBtn   = document.getElementById('jchat-x');
+  var msgs   = document.getElementById('jchat-msgs');
+  var inp    = document.getElementById('jchat-in');
+  var goBtn  = document.getElementById('jchat-go');
+
+  /* ── Helpers ────────────────────────────────────────────── */
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function fmt(text) {
+    var s = esc(text);
+    s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    s = s.replace(/\n/g, '<br>');
+    s = s.replace(/(https?:\/\/[^\s<>"]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    return s;
+  }
+
+  function scroll() { msgs.scrollTop = msgs.scrollHeight; }
+
+  function addBot(text) {
+    var d = document.createElement('div');
+    d.className = 'jm jbot';
+    d.innerHTML = '<div class="jm-av">🥋</div><div class="jm-b">' + fmt(text) + '</div>';
+    msgs.appendChild(d);
+    msgs.scrollTop = d.offsetTop - msgs.offsetTop;
+  }
+
+  function addUser(text) {
+    var d = document.createElement('div');
+    d.className = 'jm juser';
+    d.innerHTML = '<div class="jm-b">' + esc(text) + '</div>';
+    msgs.appendChild(d);
+    scroll();
+  }
+
+  function showTyping() {
+    var d = document.createElement('div');
+    d.className = 'jtyp'; d.id = 'jtyp';
+    d.innerHTML = '<span></span><span></span><span></span>';
+    msgs.appendChild(d); scroll();
+  }
+
+  function hideTyping() {
+    var el = document.getElementById('jtyp');
+    if (el) el.remove();
+  }
+
+  /* ── Toggle ─────────────────────────────────────────────── */
+  function toggle() {
+    open = !open;
+    win.classList.toggle('jopen', open);
+    btn.textContent = open ? '✕' : '🥋';
+    if (open && msgs.childElementCount === 0) { addBot(WELCOME); addQuickReplies(); }
+    if (open) setTimeout(function(){ inp.focus(); }, 280);
+  }
+
+  /* ── Send ───────────────────────────────────────────────── */
+  async function send() {
+    var text = inp.value.trim();
+    if (!text || loading) return;
+    inp.value = '';
+    loading = true;
+    goBtn.disabled = true;
+
+    var qr = document.getElementById('jqr');
+    if (qr) qr.remove();
+    addUser(text);
+    history.push({ role: 'user', content: text });
+    showTyping();
+
+    try {
+      var res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+      hideTyping();
+      var data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Unknown error');
+      }
+      var reply = data.reply || "Sorry, I couldn't get a response — please try again!";
+      addBot(reply);
+      history.push({ role: 'assistant', content: reply });
+      if (history.length > 20) history = history.slice(-20);
+    } catch (e) {
+      hideTyping();
+      addBot("Oops — something went wrong on my end! Feel free to try again, or reach us directly at (905) 235-9119 or sensei@karatenewmarket.com 🥋");
+    }
+
+    loading = false;
+    goBtn.disabled = false;
+    inp.focus();
+  }
+
+  /* ── Events ─────────────────────────────────────────────── */
+  btn.addEventListener('click', toggle);
+  xBtn.addEventListener('click', toggle);
+  goBtn.addEventListener('click', send);
+  inp.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+
+  // Fallback: capture clicks at document level in case overlays block direct clicks
+  document.addEventListener('click', function (e) {
+    var btnRect = btn.getBoundingClientRect();
+    if (!open && e.clientX >= btnRect.left && e.clientX <= btnRect.right &&
+        e.clientY >= btnRect.top && e.clientY <= btnRect.bottom) {
+      e.stopPropagation();
+      toggle();
+    }
+  }, true);
+
+  // Also capture touch events for mobile
+  document.addEventListener('touchend', function (e) {
+    var touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) return;
+    var btnRect = btn.getBoundingClientRect();
+    if (!open && touch.clientX >= btnRect.left && touch.clientX <= btnRect.right &&
+        touch.clientY >= btnRect.top && touch.clientY <= btnRect.bottom) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggle();
+    }
+  }, true);
+
+  } // end init()
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
