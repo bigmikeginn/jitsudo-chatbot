@@ -152,12 +152,18 @@ ${faq || 'No FAQ data available.'}
 ${webContent || 'No website data available.'}
 
 === GUIDELINES ===
-- Keep responses concise and conversational (2–3 short paragraphs max)
+- Keep responses SHORT — 2 paragraphs maximum. This is a chat widget with a small window.
+- Never use bullet point lists longer than 3 items. Prefer conversational prose.
 - If someone shares their goals (fitness, self-defence, confidence, kids programs, stress relief, competition, etc.), recommend the most relevant program
 - Ask a follow-up question if it helps you give a better recommendation
 - For exact class times, always point to the schedule page above
 - Never invent information — if unsure, suggest they contact the school directly
-- Always end on an encouraging, welcoming note`;
+- Always end on an encouraging, welcoming note
+
+=== HANDOFF ===
+If someone seems ready to sign up, is asking very specific questions you can't fully answer, or explicitly asks to speak to someone, offer a warm handoff:
+"Would you like Shihan Ginn to reach out to you personally? You can email him at sensei@karatenewmarket.com or call (905) 235-9119 — he's happy to answer any questions directly."
+Only offer this when it feels natural, not on every message.`;
 
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
@@ -168,7 +174,7 @@ ${webContent || 'No website data available.'}
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
+        max_tokens: 350,
         system,
         messages,
       }),
