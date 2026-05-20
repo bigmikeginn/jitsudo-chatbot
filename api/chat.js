@@ -39,6 +39,7 @@ const PAGES_TO_SCRAPE = [
   'https://www.jitsudo.ca/about',
   'https://www.jitsudo.ca/contact',
   'https://www.jitsudo.ca/bjj',
+  'https://www.jitsudo.ca/kids-programs',
 ];
 
 // Module-level cache
@@ -162,6 +163,13 @@ Jitsudo is a hybrid martial arts school. We teach two main disciplines:
 2. BJJ (Brazilian Jiu-Jitsu) — Taught by a head instructor with training from a Gracie Humaita school. Do NOT describe our BJJ as "Gracie Humaita BJJ" — simply call it BJJ.
 
 We serve adults, youth, and kids. All memberships include both karate and BJJ.
+
+=== KIDS PROGRAMS ===
+**Kids Foundations (Ages 6–12)**
+Children train in both Karate and Jiu-Jitsu fundamentals. Structured, high-standard environment focused on discipline, body awareness, and real physical capability. No prior experience needed.
+
+**Kickstart (Ages 4–6)**
+An 8-week introductory karate program for younger children. Students wear a proper gi and belt, train the same material as a 6-year-old white belt, and earn stripes on their belt as they progress — everything is calibrated for the 4–6 age group. Cost: $140 per 8-week session. Kickstart graduates move naturally into Kids Foundations at age 6.
 
 === MEMBERSHIP TIERS ===
 - **Core** (Most Popular) — $159.99/month. Unlimited classes.
