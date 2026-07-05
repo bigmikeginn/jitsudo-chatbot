@@ -12,7 +12,10 @@ http.createServer((req, res) => {
     res.end(combined);
     return;
   }
-  const filePath = path.join(__dirname, req.url);
+  const filePath = path.resolve(__dirname, '.' + path.normalize(req.url.split('?')[0]));
+  if (!filePath.startsWith(__dirname + path.sep)) {
+    res.writeHead(403); res.end('Forbidden'); return;
+  }
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
     const ext = path.extname(filePath);
@@ -20,4 +23,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': mime[ext] || 'text/plain' });
     res.end(data);
   });
-}).listen(PORT, () => console.log(`Preview at http://localhost:${PORT}`));
+}).listen(PORT, '127.0.0.1', () => console.log(`Preview at http://localhost:${PORT}`));
